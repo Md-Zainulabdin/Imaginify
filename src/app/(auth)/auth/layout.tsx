@@ -1,12 +1,22 @@
 import React from "react";
-import Logo from "@/components/Logo";
+
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { getAuth } from "@/lib/auth";
+import Logo from "@/components/Logo";
 
 interface Props {
   children: React.ReactNode;
 }
 
-const AuthLayout: React.FC<Props> = ({ children }) => {
+const AuthLayout: React.FC<Props> = async ({ children }) => {
+  const auth = await getAuth();
+
+  if (auth?.user) {
+    redirect("/");
+  }
+
   return (
     <div className="w-full h-screen">
       <Link href={"/"} className="logo flex items-center justify-center py-20">

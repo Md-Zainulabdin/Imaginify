@@ -1,9 +1,11 @@
 "use client";
 import { z } from "zod";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
-import { Button } from "@/components/ui/button";
+import { signIn } from "next-auth/react";
 
 import {
   Form,
@@ -13,11 +15,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
-import Link from "next/link";
+import { useToast } from "@/components/ui/use-toast";
+
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z
@@ -38,6 +40,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginForm = () => {
+  const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -49,15 +52,41 @@ const LoginForm = () => {
     },
   });
 
+  // Spinner
+  const Icons = {
+    spinner: Loader2,
+  };
+
   const submitHandler = async (values: FormValues) => {
     setLoading(true);
 
     const formData = {
       email: values.email,
       password: values.password,
+      redirect: false,
     };
 
-    console.log(formData);
+    try {
+      const response = await signIn("credentials", formData);
+      if (response?.ok) {
+        toast({
+          title: "Login Successfull",
+        });
+        router.push("/");
+      } else {
+        toast({
+          title: `${response?.error}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Authentication",
+        description: "Login Failed",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -116,7 +145,13 @@ const LoginForm = () => {
               className="w-full font-semibold font-cal text-md"
               type="submit"
             >
-              Sign in
+              {loading ? (
+                <span>
+                  <Icons.spinner className="mr-2 h-5 w-5 animate-spin" />
+                </span>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
         </Form>

@@ -1,5 +1,6 @@
 "use client";
 import { z } from "zod";
+import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
@@ -18,6 +19,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 const formSchema = z.object({
   name: z
@@ -44,6 +47,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const RegisterForm = () => {
+  const { toast } = useToast();
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -56,6 +61,11 @@ const RegisterForm = () => {
     },
   });
 
+  // Spinner
+  const Icons = {
+    spinner: Loader2,
+  };
+
   const submitHandler = async (values: FormValues) => {
     setLoading(true);
 
@@ -65,7 +75,24 @@ const RegisterForm = () => {
       password: values.password,
     };
 
-    console.log(formData);
+    try {
+      const response = await axios.post(`/api/user`, formData);
+
+      if (response.status == 201) {
+        toast({
+          title: "Registration Successfull",
+        });
+        router.push("/auth/login");
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast({
+        title: `${error.response.statusText}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -145,7 +172,13 @@ const RegisterForm = () => {
               className="w-full font-semibold font-cal text-md"
               type="submit"
             >
-              Sign up
+              {loading ? (
+                <span>
+                  <Icons.spinner className="mr-2 h-5 w-5 animate-spin" />
+                </span>
+              ) : (
+                "Sign up"
+              )}
             </Button>
           </form>
         </Form>
